@@ -27,6 +27,17 @@ public:
         loadManifest();  // Attempt to load the manifest on startup
     }
 
+    void help() {
+        qDebug() << "OdizinnePackageManager:";
+        qDebug() << "Available commands:";
+        qDebug() << "  update                   - Pull latest app manifest and check for available upgrades.";
+        qDebug() << "  list                     - List all available packages with their versions.";
+        qDebug() << "  install <package_names>  - Install one or more packages.";
+        qDebug() << "  remove <package_names>   - Remove one or more installed packages.";
+        qDebug() << "  upgrade                  - Upgrade installed packages to the latest versions.";
+        qDebug() << "  help                     - Display this help message.";
+    }
+
     void update() {
         fetchManifest();
 
@@ -328,7 +339,6 @@ int main(int argc, char *argv[]) {
     QString command = argv[1];
     QStringList packageNames;
 
-    // Collect all package names from the command line arguments
     for (int i = 2; i < argc; ++i) {
         packageNames << argv[i];
     }
@@ -338,13 +348,15 @@ int main(int argc, char *argv[]) {
     } else if (command == "list") {
         manager.list();
     } else if (command == "install") {
-        manager.install(packageNames);  // Pass the list of package names
+        manager.install(packageNames);
     } else if (command == "remove") {
-        manager.remove(packageNames);    // Pass the list of package names
+        manager.remove(packageNames);
     } else if (command == "upgrade") {
         manager.upgrade();
+    } else if (command == "help") {
+        manager.help();
     } else {
-        qDebug() << "Unknown command or missing arguments.";
+        qDebug() << "Unknown command or missing arguments.\nTry running opm help";
     }
 
     return 0;
