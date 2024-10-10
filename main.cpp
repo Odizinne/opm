@@ -10,6 +10,7 @@
 #include <QDebug>
 #include <QEventLoop>
 #include <QStandardPaths>
+#include <QSettings>
 #include <windows.h>
 #include <shlobj.h> // Include for shortcut creation
 
@@ -47,26 +48,40 @@ public:
         // Copy application files to target directory, overwriting if necessary
         QDir dir(sourceDir);
         for (const QString &fileName : dir.entryList(QDir::Files)) {
+            QString sourceFilePath = sourceDir + "/" + fileName;
             QString targetFilePath = targetDir + "/" + fileName;
+
+            // Check if the file exists at the target and remove it if necessary
             if (QFile::exists(targetFilePath)) {
-                QFile::remove(targetFilePath);  // Remove existing file
+                if (!QFile::remove(targetFilePath)) {
+                    qDebug() << "Failed to remove existing file:" << targetFilePath;
+                    continue; // Skip copying this file if it cannot be removed
+                }
             }
-            QFile::copy(sourceDir + "/" + fileName, targetFilePath);
+
+            // Attempt to copy the file
+            if (!QFile::copy(sourceFilePath, targetFilePath)) {
+                qDebug() << "Failed to copy" << fileName << "to" << targetDir;
+            } else {
+                qDebug() << "Successfully copied" << fileName << "to" << targetDir;
+            }
         }
 
-        // Add the target directory to the user-specific PATH
-        QString path = QProcessEnvironment::systemEnvironment().value("PATH");
+        // Use registry to update user PATH
+        QSettings settings("HKEY_CURRENT_USER\\Environment", QSettings::NativeFormat);
+        QString path = settings.value("PATH").toString();
+
         if (!path.contains(targetDir, Qt::CaseInsensitive)) {
-            QString userPathCmd = QString("setx PATH \"%1;%2\"").arg(targetDir, path);
-            QProcess process;
-            process.start("cmd", QStringList() << "/c" << userPathCmd);
-            process.waitForFinished();
+            if (!path.isEmpty() && !path.endsWith(";")) {
+                path.append(";");
+            }
+            path.append(targetDir);
+
+            settings.setValue("PATH", path);
         }
 
-        qDebug() << "OPM installed successfully to" << targetDir;
-        qDebug() << "The path has been updated. You may need to restart your terminal to see the changes.";
-        qDebug() << "After terminal restart try to run opm help";
-        qDebug() << "If everything is working you can then remove downloaded opm directory.";
+        qDebug() << "OPM installed successfully to" << targetDir << "and added to path";
+        qDebug() << "You may need to restart your terminal for the changes to take effect.";
     }
 
     void update() {
