@@ -161,8 +161,31 @@ public:
             QString installedVersion = installedVersions.value(projectName, "");
             if (installedVersion != version && !installedVersion.isEmpty()) {
                 qDebug() << "Upgrading package:" << projectName << "from version" << installedVersion << "to" << version;
+
+                // Check if the executable is running
+                QProcess process;
+                process.start("tasklist");
+                process.waitForFinished();
+
+                QString output = process.readAllStandardOutput();
+                bool isRunning = output.contains(projectName + ".exe", Qt::CaseInsensitive);
+
+                // If the process is running, terminate it
+                if (isRunning) {
+                    qDebug() << "Terminating running process:" << projectName;
+                    process.start("taskkill", QStringList() << "/F" << "/IM" << (projectName + ".exe"));
+                    process.waitForFinished();
+                }
+
+                // Upgrade the package
                 install(QStringList() << projectName);
                 upgradesFound = true;
+
+                // Restart the process if it was running
+                if (isRunning) {
+                    qDebug() << "Restarting process:" << projectName;
+                    QProcess::startDetached(projectName + ".exe"); // Start the executable with the name only
+                }
             }
         }
 
