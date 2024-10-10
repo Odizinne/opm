@@ -214,6 +214,22 @@ public:
                 if (QString::compare(installedPackage, packageName, Qt::CaseInsensitive) == 0) {
                     QString packageDir = QDir::homePath() + "/AppData/Local/Programs/" + installedPackage;
                     if (QDir(packageDir).exists()) {
+
+                        // Check if the executable is running
+                        QProcess process;
+                        process.start("tasklist");
+                        process.waitForFinished();
+
+                        QString output = process.readAllStandardOutput();
+                        bool isRunning = output.contains(packageName + ".exe", Qt::CaseInsensitive);
+
+                        // If the process is running, terminate it
+                        if (isRunning) {
+                            qDebug() << "Terminating running process:" << packageName;
+                            process.start("taskkill", QStringList() << "/F" << "/IM" << (packageName + ".exe"));
+                            process.waitForFinished();
+                        }
+
                         QDir(packageDir).removeRecursively();
                         installedVersions.remove(installedPackage);
                         saveInstalledPackages();
