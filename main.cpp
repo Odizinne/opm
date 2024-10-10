@@ -268,12 +268,13 @@ private:
 
         if (reply->error() == QNetworkReply::NoError) {
             QByteArray responseData = reply->readAll();
-            QString zipFilePath = QDir::homePath() + "/Downloads/" + packageName + ".zip";
+            QString zipFilePath = appDataDir + "/" + packageName + ".zip";
             QFile zipFile(zipFilePath);
             if (zipFile.open(QIODevice::WriteOnly)) {
                 zipFile.write(responseData);
                 zipFile.close();
 
+                // Extract the zip file
                 extractZip(zipFilePath, QDir::homePath() + "/AppData/Local/Programs/", packageName);
 
                 QString extractedDir = QDir::homePath() + "/AppData/Local/Programs/" + packageName;
@@ -281,6 +282,11 @@ private:
                 if (QDir(extractedDir).exists()) {
                     installedVersions[packageName] = version;
                     saveInstalledPackages();
+
+                    // Remove the zip file after extraction
+                    if (!QFile::remove(zipFilePath)) {
+                        qDebug() << "Failed to remove zip file:" << zipFilePath;
+                    }
                 } else {
                     qDebug() << "Extracted directory does not exist:" << extractedDir;
                 }
