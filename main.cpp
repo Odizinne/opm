@@ -11,6 +11,7 @@
 #include <QEventLoop>
 #include <QStandardPaths>
 #include <QSettings>
+#include <QDirIterator>
 #include <windows.h>
 #include <shlobj.h> // Include for shortcut creation
 
@@ -38,6 +39,7 @@ public:
         qDebug() << "  help                     - Display this help message.";
     }
 
+
     void selfinstall() {
         QString sourceDir = QCoreApplication::applicationDirPath();
         QString targetDir = QDir::homePath() + "/AppData/Local/Programs/opm";
@@ -45,27 +47,8 @@ public:
         // Ensure the target directory exists
         QDir().mkpath(targetDir);
 
-        // Copy application files to target directory, overwriting if necessary
-        QDir dir(sourceDir);
-        for (const QString &fileName : dir.entryList(QDir::Files)) {
-            QString sourceFilePath = sourceDir + "/" + fileName;
-            QString targetFilePath = targetDir + "/" + fileName;
-
-            // Check if the file exists at the target and remove it if necessary
-            if (QFile::exists(targetFilePath)) {
-                if (!QFile::remove(targetFilePath)) {
-                    qDebug() << "Failed to remove existing file:" << targetFilePath;
-                    continue; // Skip copying this file if it cannot be removed
-                }
-            }
-
-            // Attempt to copy the file
-            if (!QFile::copy(sourceFilePath, targetFilePath)) {
-                qDebug() << "Failed to copy" << fileName << "to" << targetDir;
-            } else {
-                qDebug() << "Successfully copied" << fileName << "to" << targetDir;
-            }
-        }
+        // Recursively copy all files and subdirectories
+        copyRecursively(sourceDir, targetDir);
 
         // Use registry to update user PATH
         QSettings settings("HKEY_CURRENT_USER\\Environment", QSettings::NativeFormat);
@@ -82,6 +65,35 @@ public:
 
         qDebug() << "OPM installed successfully to" << targetDir << "and added to path";
         qDebug() << "You may need to restart your terminal for the changes to take effect.";
+    }
+
+    bool copyRecursively(const QString &sourcePath, const QString &destinationPath) {
+        QDir sourceDir(sourcePath);
+        if (!sourceDir.exists()) {
+            return false;
+        }
+
+        QDir destDir(destinationPath);
+        if (!destDir.exists()) {
+            destDir.mkpath(".");
+        }
+
+        foreach (QString entry, sourceDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot | QDir::Files)) {
+            QString sourceEntry = sourcePath + "/" + entry;
+            QString destEntry = destinationPath + "/" + entry;
+
+            QFileInfo fileInfo(sourceEntry);
+            if (fileInfo.isDir()) {
+                // Recursively copy sub-directory
+                if (!copyRecursively(sourceEntry, destEntry)) {
+                    return false;
+                }
+            } else {
+                // Copy file
+                QFile::copy(sourceEntry, destEntry);
+            }
+        }
+        return true;
     }
 
     void update() {
