@@ -41,11 +41,17 @@ public:
         QString sourceDir = QCoreApplication::applicationDirPath();
         QString targetDir = QDir::homePath() + "/AppData/Local/Programs/opm";
 
-        // Copy application files to target directory
-        QDir().mkpath(targetDir); // Ensure the target directory exists
+        // Ensure the target directory exists
+        QDir().mkpath(targetDir);
+
+        // Copy application files to target directory, overwriting if necessary
         QDir dir(sourceDir);
         for (const QString &fileName : dir.entryList(QDir::Files)) {
-            QFile::copy(sourceDir + "/" + fileName, targetDir + "/" + fileName);
+            QString targetFilePath = targetDir + "/" + fileName;
+            if (QFile::exists(targetFilePath)) {
+                QFile::remove(targetFilePath);  // Remove existing file
+            }
+            QFile::copy(sourceDir + "/" + fileName, targetFilePath);
         }
 
         // Add the target directory to the user-specific PATH
