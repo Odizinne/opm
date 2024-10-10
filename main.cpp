@@ -10,6 +10,8 @@
 #include <QDebug>
 #include <QEventLoop>
 #include <QStandardPaths>
+#include <windows.h>
+#include <shlobj.h> // Include for shortcut creation
 
 class PackageManager {
 public:
@@ -85,9 +87,9 @@ public:
                 qDebug().noquote() << QString("%1 %2").arg(projectName.leftJustified(20)).arg(version);
             } else {
                 qDebug().noquote() << QString("%1 %2 (Installed: %3)")
-                                          .arg(projectName.leftJustified(20))
-                                          .arg(version)
-                                          .arg(installedVersion);
+                .arg(projectName.leftJustified(20))
+                    .arg(version)
+                    .arg(installedVersion);
             }
         }
     }
@@ -109,6 +111,7 @@ public:
                         QString url = pkgObj["url"].toString();
                         downloadPackage(url, projectName, latestVersion);
                         qDebug() << "Installed package:" << projectName;
+                        createStartMenuEntry(projectName); // Create a shortcut after installing
                     }
                     found = true;
                     break;
@@ -131,6 +134,9 @@ public:
                         installedVersions.remove(installedPackage);
                         saveInstalledPackages();
                         qDebug() << "Removed package:" << installedPackage;
+
+                        QString shortcutPath = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/" + installedPackage + ".lnk";
+                        QFile::remove(shortcutPath);
                     } else {
                         qDebug() << "Package not installed:" << installedPackage;
                     }
@@ -286,20 +292,57 @@ private:
     }
 
     void saveInstalledPackages() {
-        QJsonObject jsonObj;
-        for (const auto &key : installedVersions.keys()) {
-            jsonObj.insert(key, installedVersions.value(key));
-        }
-        QJsonDocument jsonDoc(jsonObj);
         QFile file(installedPackagesFile);
         if (file.open(QIODevice::WriteOnly)) {
+            QJsonObject jsonObj;
+            for (const auto &key : installedVersions.keys()) {
+                jsonObj[key] = installedVersions[key];
+            }
+            QJsonDocument jsonDoc(jsonObj);
             file.write(jsonDoc.toJson());
             file.close();
-        } else {
-            qDebug() << "Error saving installed packages file:" << installedPackagesFile;
         }
     }
+
+    void createStartMenuEntry(const QString &projectName) {
+        // Define the shortcut path in the Start Menu
+        QString shortcutPath = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/" + projectName + ".lnk";
+        QString targetPath = QDir::homePath() + "/AppData/Local/Programs/" + projectName + "/" + projectName + ".exe"; // Adjust based on your executable
+
+        // Initialize COM
+        CoInitialize(NULL);
+        IShellLink *pShellLink = nullptr;
+        HRESULT hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (LPVOID*)&pShellLink);
+
+        if (SUCCEEDED(hres)) {
+            // Set the target and description
+            pShellLink->SetPath(targetPath.toStdWString().c_str()); // Convert QString to std::wstring
+            pShellLink->SetDescription(projectName.toStdWString().c_str()); // Convert QString to std::wstring
+
+            // Set the working directory, ensure to convert to std::wstring
+            QString workingDir = QDir::homePath() + "/AppData/Local/Programs/" + projectName;
+            pShellLink->SetWorkingDirectory(workingDir.toStdWString().c_str());
+
+            // Save the shortcut
+            IPersistFile *pPersistFile;
+            hres = pShellLink->QueryInterface(IID_IPersistFile, (LPVOID*)&pPersistFile);
+            if (SUCCEEDED(hres)) {
+                // Use the wstring conversion for the shortcut path
+                hres = pPersistFile->Save(shortcutPath.toStdWString().c_str(), TRUE);
+                pPersistFile->Release();
+            }
+
+            pShellLink->Release();
+        } else {
+            qDebug() << "Failed to create ShellLink instance.";
+        }
+
+        // Uninitialize COM
+        CoUninitialize();
+    }
+
 };
+
 
 int main(int argc, char *argv[]) {
     QCoreApplication a(argc, argv);
