@@ -182,10 +182,10 @@ public:
                 upgradesFound = true;
 
                 // Restart the process if it was running
-                if (isRunning) {
-                    qDebug() << "Restarting process:" << projectName;
-                    QProcess::startDetached(projectName + ".exe"); // Start the executable with the name only
-                }
+                // if (isRunning) {
+                //     qDebug() << "Restarting process:" << projectName;
+                //     QProcess::startDetached(projectName + ".exe"); // Start the executable with the name only
+                // }
             }
         }
 
