@@ -108,10 +108,34 @@ public:
                     if (installedVersion == latestVersion) {
                         qDebug() << projectName << "already installed and up to date.";
                     } else {
+                        // Check if the executable is running
+                        QProcess process;
+                        process.start("tasklist");
+                        process.waitForFinished();
+
+                        QString output = process.readAllStandardOutput();
+                        bool isRunning = output.contains(projectName + ".exe", Qt::CaseInsensitive);
+
+                        // If the process is running, terminate it
+                        if (isRunning) {
+                            qDebug() << "Terminating running process:" << projectName;
+                            process.start("taskkill", QStringList() << "/F" << "/IM" << (projectName + ".exe"));
+                            process.waitForFinished();
+                        }
+
                         QString url = pkgObj["url"].toString();
                         downloadPackage(url, projectName, latestVersion);
                         createStartMenuEntry(projectName);
                         qDebug() << "\nInstalled package:" << projectName;
+
+                        if (isRunning) {
+                            qDebug() << "Restarting process:" << projectName;
+
+                            QString processName = QDir::homePath() + "/AppData/Local/Programs/" + projectName + "/" + projectName + ".exe";
+                            qDebug() << processName;
+                            QProcess::startDetached(processName);
+
+                        }
                     }
                     found = true;
                     break;
@@ -162,30 +186,8 @@ public:
             if (installedVersion != version && !installedVersion.isEmpty()) {
                 qDebug() << "Upgrading package:" << projectName << "from version" << installedVersion << "to" << version;
 
-                // Check if the executable is running
-                QProcess process;
-                process.start("tasklist");
-                process.waitForFinished();
-
-                QString output = process.readAllStandardOutput();
-                bool isRunning = output.contains(projectName + ".exe", Qt::CaseInsensitive);
-
-                // If the process is running, terminate it
-                if (isRunning) {
-                    qDebug() << "Terminating running process:" << projectName;
-                    process.start("taskkill", QStringList() << "/F" << "/IM" << (projectName + ".exe"));
-                    process.waitForFinished();
-                }
-
-                // Upgrade the package
                 install(QStringList() << projectName);
                 upgradesFound = true;
-
-                // Restart the process if it was running
-                // if (isRunning) {
-                //     qDebug() << "Restarting process:" << projectName;
-                //     QProcess::startDetached(projectName + ".exe"); // Start the executable with the name only
-                // }
             }
         }
 
