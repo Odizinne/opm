@@ -110,8 +110,8 @@ public:
                     } else {
                         QString url = pkgObj["url"].toString();
                         downloadPackage(url, projectName, latestVersion);
-                        qDebug() << "Installed package:" << projectName;
-                        createStartMenuEntry(projectName); // Create a shortcut after installing
+                        createStartMenuEntry(projectName);
+                        qDebug() << "\nInstalled package:" << projectName;
                     }
                     found = true;
                     break;
@@ -201,7 +201,6 @@ private:
             if (manifestFileHandle.open(QIODevice::WriteOnly)) {
                 manifestFileHandle.write(responseData);
                 manifestFileHandle.close();
-                qDebug() << "Manifest saved to:" << manifestFile;
             } else {
                 qDebug() << "Error saving manifest file:" << manifestFile;
             }
@@ -249,9 +248,8 @@ private:
             if (zipFile.open(QIODevice::WriteOnly)) {
                 zipFile.write(responseData);
                 zipFile.close();
-                qDebug() << "Downloaded:" << zipFilePath;
 
-                extractZip(zipFilePath, QDir::homePath() + "/AppData/Local/Programs/");
+                extractZip(zipFilePath, QDir::homePath() + "/AppData/Local/Programs/", packageName);
 
                 QString extractedDir = QDir::homePath() + "/AppData/Local/Programs/" + packageName;
 
@@ -270,8 +268,8 @@ private:
         reply->deleteLater();
     }
 
-    void extractZip(const QString &zipFilePath, const QString &destDir) {
-        qDebug() << "Extracting ZIP file to:" << destDir;
+    void extractZip(const QString &zipFilePath, const QString &destDir, const QString &packageName) {
+        qDebug() << "Installing to:" << destDir + packageName;
 
         QString program = "powershell";
         QStringList arguments;
@@ -333,6 +331,7 @@ private:
             }
 
             pShellLink->Release();
+            qDebug() << "Created start menu entry.";
         } else {
             qDebug() << "Failed to create ShellLink instance.";
         }
