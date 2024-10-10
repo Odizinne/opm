@@ -9,5 +9,6 @@ OdizinnePackageManager:
   install <package_names>  - Install one or more packages.
   remove <package_names>   - Remove one or more installed packages.
   upgrade                  - Upgrade installed packages to the latest versions.
+  selfinstall              - Install opm in %localappdata%/programs/opm and add to path.
   help                     - Display this help message.
 ```
