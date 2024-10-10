@@ -33,7 +33,34 @@ public:
         qDebug() << "  install <package_names>  - Install one or more packages.";
         qDebug() << "  remove <package_names>   - Remove one or more installed packages.";
         qDebug() << "  upgrade                  - Upgrade installed packages to the latest versions.";
+        qDebug() << "  selfinstall              - Install opm in %localappdata%/programs/opm and add to path.";
         qDebug() << "  help                     - Display this help message.";
+    }
+
+    void selfinstall() {
+        QString sourceDir = QCoreApplication::applicationDirPath();
+        QString targetDir = QDir::homePath() + "/AppData/Local/Programs/opm";
+
+        // Copy application files to target directory
+        QDir().mkpath(targetDir); // Ensure the target directory exists
+        QDir dir(sourceDir);
+        for (const QString &fileName : dir.entryList(QDir::Files)) {
+            QFile::copy(sourceDir + "/" + fileName, targetDir + "/" + fileName);
+        }
+
+        // Add the target directory to the user-specific PATH
+        QString path = QProcessEnvironment::systemEnvironment().value("PATH");
+        if (!path.contains(targetDir, Qt::CaseInsensitive)) {
+            QString userPathCmd = QString("setx PATH \"%1;%2\"").arg(targetDir, path);
+            QProcess process;
+            process.start("cmd", QStringList() << "/c" << userPathCmd);
+            process.waitForFinished();
+        }
+
+        qDebug() << "OPM installed successfully to" << targetDir;
+        qDebug() << "The path has been updated. You may need to restart your terminal to see the changes.";
+        qDebug() << "After terminal restart try to run opm help";
+        qDebug() << "If everything is working you can then remove downloaded opm directory.";
     }
 
     void update() {
@@ -390,7 +417,9 @@ int main(int argc, char *argv[]) {
         packageNames << argv[i];
     }
 
-    if (command == "update") {
+    if (command == "selfinstall") {
+        manager.selfinstall();
+    } else if (command == "update") {
         manager.update();
     } else if (command == "list") {
         manager.list();
