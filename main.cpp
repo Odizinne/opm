@@ -29,16 +29,20 @@ public:
     }
 
     void help() {
-        qDebug() << "OdizinnePackageManager:";
-        qDebug() << "  update                   - Pull latest app manifest and check for available upgrades.";
-        qDebug() << "  list                     - List all available packages with their versions.";
-        qDebug() << "  install <package_names>  - Install one or more packages.";
-        qDebug() << "  remove <package_names>   - Remove one or more installed packages.";
-        qDebug() << "  upgrade                  - Upgrade installed packages to the latest versions.";
-        qDebug() << "  selfinstall              - Install opm in %localappdata%/programs/opm and add to path.";
-        qDebug() << "  help                     - Display this help message.";
+        qDebug() << "+-----------------------------------------------------------------------------------------+";
+        qDebug() << "|                                OdizinnePackageManager:                                  |";
+        qDebug() << "|-----------------------------------------------------------------------------------------|";
+        qDebug() << "|                                                                                         |";
+        qDebug() << "|  update                   - Pull latest app manifest and check for available upgrades.  |";
+        qDebug() << "|  list                     - List all available packages with their versions.            |";
+        qDebug() << "|  install <package_names>  - Install one or more packages.                               |";
+        qDebug() << "|  remove <package_names>   - Remove one or more installed packages.                      |";
+        qDebug() << "|  upgrade                  - Upgrade installed packages to the latest versions.          |";
+        qDebug() << "|  selfinstall              - Install opm in %localappdata%/programs/ and add to path.    |";
+        qDebug() << "|  help                     - Display this help message.                                  |";
+        qDebug() << "|                                                                                         |";
+        qDebug() << "+-----------------------------------------------------------------------------------------+";
     }
-
 
     void selfinstall() {
         QString sourceDir = QCoreApplication::applicationDirPath();
