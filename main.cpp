@@ -15,21 +15,17 @@ class PackageManager {
 public:
     PackageManager() {
         appDataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-        QDir().mkpath(appDataDir); // Ensure the directory exists
+        QDir().mkpath(appDataDir);
 
         manifestFile = appDataDir + "/manifest.json";
         installedPackagesFile = appDataDir + "/opm_installed_packages.json";
 
-        // Load installed packages from JSON if exists
         parseInstalledPackages();
-
-        // Load the manifest file
-        loadManifest();  // Attempt to load the manifest on startup
+        loadManifest();
     }
 
     void help() {
         qDebug() << "OdizinnePackageManager:";
-        qDebug() << "Available commands:";
         qDebug() << "  update                   - Pull latest app manifest and check for available upgrades.";
         qDebug() << "  list                     - List all available packages with their versions.";
         qDebug() << "  install <package_names>  - Install one or more packages.";
@@ -41,7 +37,6 @@ public:
     void update() {
         fetchManifest();
 
-        // Check for updates after fetching the latest manifest
         if (manifest.isEmpty()) {
             qDebug() << "No available packages found. Please update the manifest.";
             return;
@@ -50,7 +45,6 @@ public:
         bool updatesAvailable = false;
         qDebug() << "Checking for updates...";
 
-        // Iterate over installed packages to check for updates
         for (const auto &package : manifest) {
             QJsonObject pkgObj = package.toObject();
             QString projectName = pkgObj["project_name"].toString();
@@ -76,25 +70,20 @@ public:
             return;
         }
 
-        // Print header without quotes
         qDebug() << "Listing all available packages:";
-        qDebug() << "Package Name         Version";  // Header
-        qDebug() << "-------------------- ----------"; // Separator line
+        qDebug() << "Package Name         Version";
+        qDebug() << "-------------------- ----------";
 
         for (const auto &package : manifest) {
             QJsonObject pkgObj = package.toObject();
             QString projectName = pkgObj["project_name"].toString();
             QString version = pkgObj["version"].toString();
 
-            // Check if the package is installed
             QString installedVersion = installedVersions.value(projectName, "");
 
-            // Format output without quotes
             if (installedVersion.isEmpty()) {
-                // If not installed, just show the package name and version
                 qDebug().noquote() << QString("%1 %2").arg(projectName.leftJustified(20)).arg(version);
             } else {
-                // If installed, show the package name, version, and the installed version
                 qDebug().noquote() << QString("%1 %2 (Installed: %3)")
                                           .arg(projectName.leftJustified(20))
                                           .arg(version)
@@ -103,7 +92,6 @@ public:
         }
     }
 
-    // Updated install function to accept multiple package names and handle case insensitivity
     void install(const QStringList &packageNames) {
         for (const QString &packageName : packageNames) {
             bool found = false;
@@ -112,17 +100,14 @@ public:
                 QString projectName = pkgObj["project_name"].toString();
                 QString latestVersion = pkgObj["version"].toString();
 
-                // Compare case-insensitively
                 if (QString::compare(projectName, packageName, Qt::CaseInsensitive) == 0) {
                     QString installedVersion = installedVersions.value(projectName, "");
 
-                    // Check if the package is already installed and up to date
                     if (installedVersion == latestVersion) {
                         qDebug() << projectName << "already installed and up to date.";
                     } else {
-                        // Proceed with installation if not up to date
                         QString url = pkgObj["url"].toString();
-                        downloadPackage(url, projectName, latestVersion); // Pass the latest version to downloadPackage
+                        downloadPackage(url, projectName, latestVersion);
                         qDebug() << "Installed package:" << projectName;
                     }
                     found = true;
@@ -135,12 +120,10 @@ public:
         }
     }
 
-    // Updated remove function to accept multiple package names and handle case insensitivity
     void remove(const QStringList &packageNames) {
         for (const QString &packageName : packageNames) {
-            bool found = false; // Flag to check if package was found
+            bool found = false;
             for (const QString &installedPackage : installedVersions.keys()) {
-                // Compare case-insensitively
                 if (QString::compare(installedPackage, packageName, Qt::CaseInsensitive) == 0) {
                     QString packageDir = QDir::homePath() + "/AppData/Local/Programs/" + installedPackage;
                     if (QDir(packageDir).exists()) {
@@ -151,7 +134,7 @@ public:
                     } else {
                         qDebug() << "Package not installed:" << installedPackage;
                     }
-                    found = true; // Set flag to true if the package was found and processed
+                    found = true;
                     break;
                 }
             }
@@ -162,7 +145,7 @@ public:
     }
 
     void upgrade() {
-        bool upgradesFound = false; // Flag to track if any upgrades are done
+        bool upgradesFound = false;
 
         for (const auto &package : manifest) {
             QJsonObject pkgObj = package.toObject();
@@ -172,8 +155,8 @@ public:
             QString installedVersion = installedVersions.value(projectName, "");
             if (installedVersion != version && !installedVersion.isEmpty()) {
                 qDebug() << "Upgrading package:" << projectName << "from version" << installedVersion << "to" << version;
-                install(QStringList() << projectName); // Call the updated install method
-                upgradesFound = true; // Set flag to true if an upgrade is initiated
+                install(QStringList() << projectName);
+                upgradesFound = true;
             }
         }
 
@@ -195,7 +178,6 @@ private:
         QNetworkAccessManager manager;
         QNetworkReply *reply = manager.get(QNetworkRequest(QUrl(manifestUrl)));
 
-        // Wait for the network reply
         QEventLoop loop;
         QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
         loop.exec();
@@ -205,12 +187,10 @@ private:
             QJsonDocument jsonDoc = QJsonDocument::fromJson(responseData);
             manifest = jsonDoc.array();
 
-            // Check if the manifest file exists and remove it
             if (QFile::exists(manifestFile)) {
                 QFile::remove(manifestFile);
             }
 
-            // Save the new manifest to the app data directory
             QFile manifestFileHandle(manifestFile);
             if (manifestFileHandle.open(QIODevice::WriteOnly)) {
                 manifestFileHandle.write(responseData);
@@ -265,15 +245,12 @@ private:
                 zipFile.close();
                 qDebug() << "Downloaded:" << zipFilePath;
 
-                // Extract the downloaded zip file
                 extractZip(zipFilePath, QDir::homePath() + "/AppData/Local/Programs/");
 
-                // After extraction, create the full path to the package's directory
                 QString extractedDir = QDir::homePath() + "/AppData/Local/Programs/" + packageName;
 
-                // Check if the package was successfully extracted
                 if (QDir(extractedDir).exists()) {
-                    installedVersions[packageName] = version; // Update installed version with actual version from manifest
+                    installedVersions[packageName] = version;
                     saveInstalledPackages();
                 } else {
                     qDebug() << "Extracted directory does not exist:" << extractedDir;
@@ -290,14 +267,11 @@ private:
     void extractZip(const QString &zipFilePath, const QString &destDir) {
         qDebug() << "Extracting ZIP file to:" << destDir;
 
-        // Prepare the PowerShell command to extract the ZIP file
         QString program = "powershell";
         QStringList arguments;
 
-        // Create the PowerShell command string to unzip the file
         QString command = QString("Expand-Archive -Path '%1' -DestinationPath '%2' -Force").arg(zipFilePath, destDir);
 
-        // Add the command to the arguments
         arguments << "-Command" << command;
 
         QProcess process;
@@ -314,7 +288,7 @@ private:
     void saveInstalledPackages() {
         QJsonObject jsonObj;
         for (const auto &key : installedVersions.keys()) {
-            jsonObj.insert(key, installedVersions.value(key)); // Save the actual installed version
+            jsonObj.insert(key, installedVersions.value(key));
         }
         QJsonDocument jsonDoc(jsonObj);
         QFile file(installedPackagesFile);
