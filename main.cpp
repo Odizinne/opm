@@ -51,8 +51,21 @@ public:
         // Ensure the target directory exists
         QDir().mkpath(targetDir);
 
+        // If the target directory already exists, remove its contents
+        if (QDir(targetDir).exists()) {
+            qDebug() << "Removing existing installation in" << targetDir;
+            QDirIterator dirIt(targetDir, QDirIterator::Subdirectories);
+            while (dirIt.hasNext()) {
+                dirIt.next();
+                QFile::remove(dirIt.filePath());
+            }
+        }
+
         // Recursively copy all files and subdirectories
-        copyRecursively(sourceDir, targetDir);
+        if (!copyRecursively(sourceDir, targetDir)) {
+            qDebug() << "Failed to copy files from" << sourceDir << "to" << targetDir;
+            return;
+        }
 
         // Use registry to update user PATH
         QSettings settings("HKEY_CURRENT_USER\\Environment", QSettings::NativeFormat);
@@ -93,8 +106,13 @@ public:
                     return false;
                 }
             } else {
+                // Remove existing file before copying
+                QFile::remove(destEntry);
                 // Copy file
-                QFile::copy(sourceEntry, destEntry);
+                if (!QFile::copy(sourceEntry, destEntry)) {
+                    qDebug() << "Failed to copy" << sourceEntry << "to" << destEntry;
+                    return false;
+                }
             }
         }
         return true;
