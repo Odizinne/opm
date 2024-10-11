@@ -148,13 +148,17 @@ public:
         }
     }
 
+    QString greenText(const QString &text) {
+        return QString("\033[32m%1\033[0m").arg(text); // 32m for green, 0m to reset
+    }
+
     void list() {
         if (manifest.isEmpty()) {
             qDebug() << "No available packages found. Please update the manifest.";
             return;
         }
 
-        qDebug() << "Listing all available packages:";
+        qDebug() << "Listing all available packages:\n";
         qDebug() << "Package Name         Version";
         qDebug() << "-------------------- ----------";
 
@@ -165,15 +169,41 @@ public:
 
             QString installedVersion = installedVersions.value(projectName, "");
 
+            QString coloredProjectName = greenText(projectName.leftJustified(20));
+
             if (installedVersion.isEmpty()) {
-                qDebug().noquote() << QString("%1 %2").arg(projectName.leftJustified(20)).arg(version);
+                qDebug().noquote() << QString("%1 %2\n").arg(coloredProjectName).arg(version);
             } else {
-                qDebug().noquote() << QString("%1 %2 (Installed: %3)")
-                .arg(projectName.leftJustified(20))
+                qDebug().noquote() << QString("%1 %2 (Installed: %3)\n")
+                .arg(coloredProjectName)
                     .arg(version)
                     .arg(installedVersion);
             }
         }
+    }
+
+    bool checkAndKillProcess(const QString &executable) {
+        QProcess process;
+        process.start("tasklist");
+        process.waitForFinished();
+
+        QString output = process.readAllStandardOutput();
+        bool isRunning = output.contains(executable + ".exe", Qt::CaseInsensitive);
+
+        if (isRunning) {
+            qDebug() << "Terminating running process:" << executable;
+            process.start("taskkill", QStringList() << "/F" << "/IM" << (executable + ".exe"));
+            process.waitForFinished();
+        }
+        return isRunning;
+    }
+
+    void restartProcess(const QString &executable) {
+        qDebug() << "Restarting process:" << executable;
+
+        QString processName = QDir::homePath() + "/AppData/Local/Programs/" + executable + "/" + executable + ".exe";
+        qDebug() << processName;
+        QProcess::startDetached(processName);
     }
 
     void install(const QStringList &packageNames) {
@@ -190,20 +220,8 @@ public:
                     if (installedVersion == latestVersion) {
                         qDebug() << projectName << "already installed and up to date.";
                     } else {
-                        // Check if the executable is running
-                        QProcess process;
-                        process.start("tasklist");
-                        process.waitForFinished();
 
-                        QString output = process.readAllStandardOutput();
-                        bool isRunning = output.contains(projectName + ".exe", Qt::CaseInsensitive);
-
-                        // If the process is running, terminate it
-                        if (isRunning) {
-                            qDebug() << "Terminating running process:" << projectName;
-                            process.start("taskkill", QStringList() << "/F" << "/IM" << (projectName + ".exe"));
-                            process.waitForFinished();
-                        }
+                        bool isRunning = checkAndKillProcess(projectName);
 
                         QString url = pkgObj["url"].toString();
                         downloadPackage(url, projectName, latestVersion);
@@ -211,12 +229,7 @@ public:
                         qDebug() << "\nInstalled package:" << projectName;
 
                         if (isRunning) {
-                            qDebug() << "Restarting process:" << projectName;
-
-                            QString processName = QDir::homePath() + "/AppData/Local/Programs/" + projectName + "/" + projectName + ".exe";
-                            qDebug() << processName;
-                            QProcess::startDetached(processName);
-
+                            restartProcess(projectName);
                         }
                     }
                     found = true;
@@ -236,21 +249,7 @@ public:
                 if (QString::compare(installedPackage, packageName, Qt::CaseInsensitive) == 0) {
                     QString packageDir = QDir::homePath() + "/AppData/Local/Programs/" + installedPackage;
                     if (QDir(packageDir).exists()) {
-
-                        // Check if the executable is running
-                        QProcess process;
-                        process.start("tasklist");
-                        process.waitForFinished();
-
-                        QString output = process.readAllStandardOutput();
-                        bool isRunning = output.contains(packageName + ".exe", Qt::CaseInsensitive);
-
-                        // If the process is running, terminate it
-                        if (isRunning) {
-                            qDebug() << "Terminating running process:" << packageName;
-                            process.start("taskkill", QStringList() << "/F" << "/IM" << (packageName + ".exe"));
-                            process.waitForFinished();
-                        }
+                        checkAndKillProcess(packageName);
 
                         QDir(packageDir).removeRecursively();
                         installedVersions.remove(installedPackage);
