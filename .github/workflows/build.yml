@@ -71,7 +71,7 @@ jobs:
         shell: pwsh
         run: |
           cd build
-          $windeployqtPath = "D:\a\OdizinnePackageManager\Qt\6.7.2\msvc2019_64\bin\windeployqt6.exe"
+          $windeployqtPath = "D:\a\opm\Qt\6.7.2\msvc2019_64\bin\windeployqt6.exe"
           if (Test-Path $windeployqtPath) {
               & $windeployqtPath `
                   --exclude-plugins qsvgicon,qsvg,qico,qjpeg,qgif,qnetworklistmanager,qtuiotouchplugin `
@@ -80,7 +80,7 @@ jobs:
                   --no-compiler-runtime `
                   --no-translations `
                   --no-system-d3d-compiler `
-                  D:\a\OdizinnePackageManager\OdizinnePackageManager\build\release\opm.exe
+                  D:\a\opm\opm\build\release\opm.exe
           } else {
               Write-Error "windeployqt not found at the expected path!"
               exit 1
@@ -90,7 +90,7 @@ jobs:
         shell: pwsh
         run: |
           $releaseDir = "build/release"
-          $newDir = "OdizinnePackageManager"
+          $newDir = "opm"
           if (Test-Path $releaseDir) {
               Rename-Item -Path $releaseDir -NewName $newDir
           } else {
@@ -101,12 +101,12 @@ jobs:
       - name: Zip binaries folder
         shell: pwsh
         run: |
-          $zipFile = "build/OdizinnePackageManager_msvc_64.zip"
-          $folder = "build/OdizinnePackageManager"
+          $zipFile = "build/opm_msvc_64.zip"
+          $folder = "build/opm"
           Compress-Archive -Path $folder -DestinationPath $zipFile
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: OdizinnePackageManager_msvc_64
-          path: build/OdizinnePackageManager_msvc_64.zip
+          name: opm_msvc_64
+          path: build/opm_msvc_64.zip
