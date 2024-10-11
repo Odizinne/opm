@@ -1,19 +1,19 @@
 # Define the API URL for the latest release
 $apiUrl = "https://api.github.com/repos/odizinne/opm/releases/latest"
-$downloadFolder = "$PSScriptRoot\opm_latest"
+$downloadFolder = "C:\opm_latest"
 $downloadFile = "$downloadFolder\opm.zip"
 
-# Create the download directory if it doesn't exist
-if (-not (Test-Path -Path $downloadFolder)) {
-    New-Item -ItemType Directory -Path $downloadFolder | Out-Null
+# Create or clean the download directory
+if (Test-Path -Path $downloadFolder) {
+    # Remove the existing directory and its contents
+    Remove-Item -Path $downloadFolder -Recurse -Force
 }
+New-Item -ItemType Directory -Path $downloadFolder | Out-Null
 
 # Fetch the latest release information
 try {
-    # Use Invoke-RestMethod to get the latest release data from GitHub
+    # Download the latest release
     $releaseData = Invoke-RestMethod -Uri $apiUrl -Headers @{ 'User-Agent' = 'PowerShell Script' }
-
-    # Extract the browser_download_url for the asset
     $downloadUrl = $releaseData.assets | Where-Object { $_.name -like "*.zip" } | Select-Object -ExpandProperty browser_download_url
 
     if (-not $downloadUrl) {

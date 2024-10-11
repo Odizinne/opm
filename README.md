@@ -17,3 +17,10 @@ Spaghetti mess package manager for my projects.
 |                                                                                         |
 +-----------------------------------------------------------------------------------------+
 ```
+
+
+## Install
+
+With powershell:
+
+`Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/Odizinne/opm/refs/heads/main/opm_install.ps1')`
