@@ -346,7 +346,7 @@ void PackageManager::parseInstalledPackages() {
 }
 
 void PackageManager::downloadPackage(const QString &url, const QString &packageName, const QString &version) {
-    qDebug() << "Downloading package from:" << url;
+    qDebug() << "Downloading package...";
     QNetworkAccessManager manager;
     QNetworkReply *reply = manager.get(QNetworkRequest(QUrl(url)));
 
