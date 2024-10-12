@@ -4,8 +4,10 @@
 #include <QString>
 #include <QJsonArray>
 
-class PackageManager
+class PackageManager : public QObject
 {
+    Q_OBJECT
+
 public:
     PackageManager();
     void help();

@@ -13,6 +13,7 @@
 #include <QStandardPaths>
 #include <QSettings>
 #include <QDirIterator>
+#include <iostream>
 #include <windows.h>
 #include <shlobj.h>
 
@@ -349,10 +350,35 @@ void PackageManager::downloadPackage(const QString &url, const QString &packageN
     QNetworkAccessManager manager;
     QNetworkReply *reply = manager.get(QNetworkRequest(QUrl(url)));
 
-    // Wait for the network reply
     QEventLoop loop;
+
+    QObject::connect(reply, &QNetworkReply::downloadProgress, this, [=](qint64 bytesReceived, qint64 bytesTotal) {
+        if (bytesTotal > 0) {
+            int barWidth = 50;  // Width of the progress bar
+            double progress = (double(bytesReceived) / bytesTotal) * 100.0;
+            int pos = static_cast<int>(barWidth * bytesReceived / bytesTotal);
+
+            // Build the progress bar
+            QString progressBar = QString("[");
+            for (int i = 0; i < barWidth; ++i) {
+                if (i < pos) progressBar += "=";
+                else if (i == pos) progressBar += ">";
+                else progressBar += " ";
+            }
+            progressBar += "] ";
+
+            // Output the progress bar and percentage
+            std::cout << "\r" << progressBar.toStdString() << QString::number(progress, 'f', 2).toStdString() << "%";
+            std::cout.flush();  // Ensure the output is displayed immediately
+        }
+    });
+
     QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+
     loop.exec();
+
+    // Ensure the progress bar reaches 100% when done
+    std::cout << std::endl;
 
     if (reply->error() == QNetworkReply::NoError) {
         QByteArray responseData = reply->readAll();
@@ -362,16 +388,13 @@ void PackageManager::downloadPackage(const QString &url, const QString &packageN
             zipFile.write(responseData);
             zipFile.close();
 
-            // Extract the zip file
             extractZip(zipFilePath, QDir::homePath() + "/AppData/Local/Programs/", packageName);
 
             QString extractedDir = QDir::homePath() + "/AppData/Local/Programs/" + packageName;
-
             if (QDir(extractedDir).exists()) {
                 installedVersions[packageName] = version;
                 saveInstalledPackages();
 
-                // Remove the zip file after extraction
                 if (!QFile::remove(zipFilePath)) {
                     qDebug() << "Failed to remove zip file:" << zipFilePath;
                 }
