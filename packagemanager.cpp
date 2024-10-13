@@ -84,6 +84,25 @@ void PackageManager::selfinstall() {
     qDebug() << "You may need to restart your terminal for the changes to take effect.";
 }
 
+void PackageManager::promptForManifestUpdate() {
+    QTextStream input(stdin);
+    QTextStream output(stdout);
+
+    output << "App manifest not found, would you like to update it? (y/n): ";
+    output.flush();
+
+    QString response = input.readLine().trimmed().toLower();
+
+    if (response == "y") {
+        update();
+    } else if (response == "n") {
+        output << "Manifest update skipped.\n";
+    } else {
+        output << "Invalid input. Please enter 'y' or 'n'.\n";
+        promptForManifestUpdate();
+    }
+}
+
 bool PackageManager::copyRecursively(const QString &sourcePath, const QString &destinationPath) {
     QDir sourceDir(sourcePath);
     if (!sourceDir.exists()) {
@@ -121,11 +140,6 @@ bool PackageManager::copyRecursively(const QString &sourcePath, const QString &d
 void PackageManager::update() {
     fetchManifest();
 
-    if (manifest.isEmpty()) {
-        qDebug() << "No available packages found. Please update the manifest.";
-        return;
-    }
-
     bool updatesAvailable = false;
     qDebug() << "Checking for updates...";
 
@@ -154,8 +168,7 @@ QString PackageManager::greenText(const QString &text) {
 
 void PackageManager::list() {
     if (manifest.isEmpty()) {
-        qDebug() << "No available packages found. Please update the manifest.";
-        return;
+        promptForManifestUpdate();
     }
 
     qDebug() << "Listing all available packages:\n";
@@ -207,6 +220,9 @@ void PackageManager::restartProcess(const QString &executable) {
 }
 
 void PackageManager::install(const QStringList &packageNames) {
+    if (manifest.isEmpty()) {
+        promptForManifestUpdate();
+    }
     for (const QString &packageName : packageNames) {
         bool found = false;
         for (const auto &package : manifest) {
@@ -272,6 +288,10 @@ void PackageManager::remove(const QStringList &packageNames) {
 }
 
 void PackageManager::upgrade() {
+    if (manifest.isEmpty()) {
+        promptForManifestUpdate();
+    }
+
     bool upgradesFound = false;
 
     for (const auto &package : manifest) {

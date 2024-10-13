@@ -36,7 +36,7 @@ private:
     void extractZip(const QString &zipFilePath, const QString &destDir, const QString &packageName);
     void saveInstalledPackages();
     void createStartMenuEntry(const QString &projectName);
-
+    void promptForManifestUpdate();
 
 };
 
