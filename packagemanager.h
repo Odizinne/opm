@@ -23,12 +23,14 @@ public:
     void upgrade();
 
 private:
+    QString previousManifestHash;
     QString manifestUrl = "https://raw.githubusercontent.com/Odizinne/opm-manifest/refs/heads/main/manifest.json";
     QString appDataDir;
     QString manifestFile;
     QString installedPackagesFile;
     QJsonArray manifest;
     QMap<QString, QString> installedVersions;
+    QByteArray computeManifestHash(const QString &filePath);
     void fetchManifest();
     void loadManifest();
     void parseInstalledPackages();

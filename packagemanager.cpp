@@ -13,6 +13,7 @@
 #include <QStandardPaths>
 #include <QSettings>
 #include <QDirIterator>
+#include <QCryptographicHash>
 #include <iostream>
 #include <windows.h>
 #include <shlobj.h>
@@ -138,6 +139,10 @@ bool PackageManager::copyRecursively(const QString &sourcePath, const QString &d
 }
 
 void PackageManager::update() {
+    // Store the hash of the existing manifest
+    QString currentManifestFilePath = manifestFile;
+    previousManifestHash = computeManifestHash(currentManifestFilePath).toHex();
+
     fetchManifest();
 
     bool updatesAvailable = false;
@@ -157,9 +162,37 @@ void PackageManager::update() {
         }
     }
 
+    // Calculate the new hash after fetching the manifest
+    QByteArray newManifestHash = computeManifestHash(currentManifestFilePath).toHex();
+
+    if (previousManifestHash != newManifestHash) {
+        qDebug() << "Manifest updated.";
+    } else {
+        qDebug() << "Manifest is already up to date.";
+    }
+
     if (!updatesAvailable) {
         qDebug() << "All installed packages are up to date.";
+    } else {
+        qDebug() << "Updates available.";
     }
+}
+
+QByteArray PackageManager::computeManifestHash(const QString &filePath) {
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qDebug() << "Failed to open manifest file for hashing.";
+        return QByteArray();
+    }
+
+    // Create a SHA256 hash
+    QCryptographicHash hash(QCryptographicHash::Sha256);
+    if (!hash.addData(&file)) {
+        qDebug() << "Failed to read data from manifest file.";
+        return QByteArray();
+    }
+
+    return hash.result();
 }
 
 QString PackageManager::greenText(const QString &text) {
