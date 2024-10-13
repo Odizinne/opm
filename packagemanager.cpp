@@ -241,7 +241,11 @@ void PackageManager::install(const QStringList &packageNames) {
 
                     QString url = pkgObj["url"].toString();
                     downloadPackage(url, projectName, latestVersion);
-                    createStartMenuEntry(projectName);
+
+                    bool createShortcut = pkgObj.contains("create_shortcut") && pkgObj["create_shortcut"].toBool();
+                    if (createShortcut) {
+                        createStartMenuEntry(projectName);
+                    }
                     qDebug() << "\nInstalled package:" << projectName;
 
                     if (isRunning) {
