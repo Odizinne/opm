@@ -53,7 +53,7 @@ void PackageManager::selfinstall() {
 
     // If the target directory already exists, remove its contents
     if (QDir(targetDir).exists()) {
-        qDebug() << "Removing existing installation in" << targetDir;
+        qDebug() << "Removing existing installation...";
         QDirIterator dirIt(targetDir, QDirIterator::Subdirectories);
         while (dirIt.hasNext()) {
             dirIt.next();
@@ -80,7 +80,7 @@ void PackageManager::selfinstall() {
         settings.setValue("PATH", path);
     }
 
-    qDebug() << "OPM installed successfully to" << targetDir << "and added to path";
+    qDebug() << "OPM installed successfully to" << targetDir << "and added to path.";
     qDebug() << "You may need to restart your terminal for the changes to take effect.";
 }
 
@@ -465,29 +465,23 @@ void PackageManager::saveInstalledPackages() {
 }
 
 void PackageManager::createStartMenuEntry(const QString &projectName) {
-    // Define the shortcut path in the Start Menu
     QString shortcutPath = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/" + projectName + ".lnk";
-    QString targetPath = QDir::homePath() + "/AppData/Local/Programs/" + projectName + "/" + projectName + ".exe"; // Adjust based on your executable
+    QString targetPath = QDir::homePath() + "/AppData/Local/Programs/" + projectName + "/" + projectName + ".exe";
 
-    // Initialize COM
     CoInitialize(NULL);
     IShellLink *pShellLink = nullptr;
     HRESULT hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (LPVOID*)&pShellLink);
 
     if (SUCCEEDED(hres)) {
-        // Set the target and description
-        pShellLink->SetPath(targetPath.toStdWString().c_str()); // Convert QString to std::wstring
-        pShellLink->SetDescription(projectName.toStdWString().c_str()); // Convert QString to std::wstring
+        pShellLink->SetPath(targetPath.toStdWString().c_str());
+        pShellLink->SetDescription(projectName.toStdWString().c_str());
 
-        // Set the working directory, ensure to convert to std::wstring
         QString workingDir = QDir::homePath() + "/AppData/Local/Programs/" + projectName;
         pShellLink->SetWorkingDirectory(workingDir.toStdWString().c_str());
 
-        // Save the shortcut
         IPersistFile *pPersistFile;
         hres = pShellLink->QueryInterface(IID_IPersistFile, (LPVOID*)&pPersistFile);
         if (SUCCEEDED(hres)) {
-            // Use the wstring conversion for the shortcut path
             hres = pPersistFile->Save(shortcutPath.toStdWString().c_str(), TRUE);
             pPersistFile->Release();
         }
@@ -498,6 +492,5 @@ void PackageManager::createStartMenuEntry(const QString &projectName) {
         qDebug() << "Failed to create ShellLink instance.";
     }
 
-    // Uninitialize COM
     CoUninitialize();
 }

@@ -25,25 +25,29 @@ try {
     }
     
     # Download the ZIP file
-    Write-Host "Downloading $downloadUrl..."
+    Write-Host "Downloading opm from $downloadUrl..."
     Invoke-WebRequest -Uri $downloadUrl -OutFile $downloadFile
     
     # Extract the ZIP file
-    Write-Host "Extracting $downloadFile..."
+    Write-Host "Extracting..."
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     [System.IO.Compression.ZipFile]::ExtractToDirectory($downloadFile, $downloadFolder)
     
     # Remove the downloaded ZIP file after extraction
     Remove-Item -Path $downloadFile
     
-    # Run the selfinstall command
+    # Run the selfinstall command and wait for it to complete
     $opmExecutable = "$downloadFolder\opm\opm.exe"
     if (Test-Path -Path $opmExecutable) {
-        Write-Host "Running selfinstall..."
-        & $opmExecutable selfinstall
+        Start-Process -FilePath $opmExecutable -ArgumentList "selfinstall" -Wait -NoNewWindow
     } else {
         Write-Error "Executable not found. Check if the extraction was successful."
     }
+
 } catch {
     Write-Error "An error occurred: $_"
+} finally {
+    if (Test-Path -Path $downloadFolder) {
+        Remove-Item -Path $downloadFolder -Recurse -Force
+    }
 }
