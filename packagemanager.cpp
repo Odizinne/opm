@@ -121,14 +121,11 @@ bool PackageManager::copyRecursively(const QString &sourcePath, const QString &d
 
         QFileInfo fileInfo(sourceEntry);
         if (fileInfo.isDir()) {
-            // Recursively copy sub-directory
             if (!copyRecursively(sourceEntry, destEntry)) {
                 return false;
             }
         } else {
-            // Remove existing file before copying
             QFile::remove(destEntry);
-            // Copy file
             if (!QFile::copy(sourceEntry, destEntry)) {
                 qDebug() << "Failed to copy" << sourceEntry << "to" << destEntry;
                 return false;
@@ -146,7 +143,6 @@ void PackageManager::update() {
     fetchManifest();
 
     bool updatesAvailable = false;
-    qDebug() << "Checking for updates...";
 
     for (const auto &package : manifest) {
         QJsonObject pkgObj = package.toObject();
