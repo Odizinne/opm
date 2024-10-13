@@ -46,4 +46,8 @@ try {
     }
 } catch {
     Write-Error "An error occurred: $_"
+} finally {
+    if (Test-Path -Path $downloadFolder) {
+        Remove-Item -Path $downloadFolder -Recurse -Force
+    }
 }
