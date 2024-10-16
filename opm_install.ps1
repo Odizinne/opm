@@ -3,7 +3,7 @@ $apiUrl = "https://api.github.com/repos/odizinne/opm/releases/latest"
 $downloadFolder = "$env:TEMP\opm_latest"
 $downloadFile = "$downloadFolder\opm.zip"
 $appDataFolder = "$env:APPDATA\opm"
-$versionFile = "$appDataFolder\version.txt"
+$versionFile = "$appDataFolder\version"
 
 # Remove the download directory if it exists
 if (Test-Path -Path $downloadFolder) {
