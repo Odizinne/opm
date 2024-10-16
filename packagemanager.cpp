@@ -152,7 +152,7 @@ void PackageManager::update() {
         QString installedVersion = installedVersions.value(projectName, "");
         if (!installedVersion.isEmpty() && installedVersion != latestVersion) {
             updatesAvailable = true;
-            qDebug() << "Update available for package:" << projectName
+            qDebug() << "\nUpdate available for package:" << projectName
                      << "Installed version:" << installedVersion
                      << "Latest version:" << latestVersion;
         }
@@ -170,6 +170,66 @@ void PackageManager::update() {
     if (!updatesAvailable) {
         qDebug() << "All installed packages are up to date.";
     }
+    checkOPMUpdate();
+}
+
+void PackageManager::checkOPMUpdate() {
+    qDebug() << "Checking for OPM updates...";
+    QString versionFilePath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/version";
+    QFile versionFile(versionFilePath);
+
+    if (!versionFile.exists() || !versionFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        return;
+    }
+
+    QString localVersionStr = versionFile.readAll().trimmed();
+    versionFile.close();
+
+    bool ok;
+    int localVersion = localVersionStr.toInt(&ok);
+    if (!ok || localVersion < 0) {
+        return;
+    }
+
+    QNetworkAccessManager networkManager;
+    QNetworkRequest request(QUrl("https://api.github.com/repos/odizinne/opm/releases/latest"));
+    QNetworkReply* reply = networkManager.get(request);
+
+    while (!reply->isFinished()) {
+        QCoreApplication::processEvents();
+    }
+
+    if (reply->error() == QNetworkReply::NoError) {
+        QByteArray responseData = reply->readAll();
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(responseData);
+        QJsonObject jsonObj = jsonDoc.object();
+
+        QString downloadUrl = jsonObj["assets"].toArray().at(0).toObject()["browser_download_url"].toString();
+
+        QRegularExpression versionRegex(R"(v(\d+))");
+        QRegularExpressionMatch match = versionRegex.match(downloadUrl);
+        int remoteVersion = 0;
+
+        if (match.hasMatch()) {
+            remoteVersion = match.captured(1).toInt();
+        } else {
+            qDebug() << "No version found in download URL.";
+            reply->deleteLater();
+            return;
+        }
+
+        if (remoteVersion > localVersion) {
+            qDebug() << "\033[32m" << qPrintable(QString("\nOPM v%1 is available.").arg(remoteVersion)) << "\033[0m";
+            qDebug() << "To install the latest version, run the following command:";
+            qDebug() << "Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/Odizinne/opm/refs/heads/main/opm_install.ps1')";
+        } else {
+            qDebug() << "\nOPM is up to date.";
+        }
+    } else {
+        qDebug() << "Network error:" << reply->errorString();
+    }
+
+    reply->deleteLater();
 }
 
 QByteArray PackageManager::computeManifestHash(const QString &filePath) {

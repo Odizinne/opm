@@ -39,6 +39,7 @@ private:
     void saveInstalledPackages();
     void createStartMenuEntry(const QString &projectName);
     void promptForManifestUpdate();
+    void checkOPMUpdate();
 
 };
 
