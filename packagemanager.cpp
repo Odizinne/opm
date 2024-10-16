@@ -169,8 +169,6 @@ void PackageManager::update() {
 
     if (!updatesAvailable) {
         qDebug() << "All installed packages are up to date.";
-    } else {
-        qDebug() << "Updates available.";
     }
 }
 
