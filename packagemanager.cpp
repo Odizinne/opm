@@ -404,10 +404,6 @@ void PackageManager::upgrade() {
             upgradesFound = true;
         }
     }
-
-    if (!upgradesFound) {
-        qDebug() << "All installed packages are up to date. Nothing to upgrade.";
-    }
 }
 
 void PackageManager::fetchManifest() {
