@@ -61,7 +61,6 @@ try {
 
     # Write the version to a file
     Set-Content -Path $versionFile -Value $version
-    Write-Host "Version $version written to $versionFile"
 
 } catch {
     Write-Error "An error occurred: $_"
