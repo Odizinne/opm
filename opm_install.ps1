@@ -2,6 +2,8 @@
 $apiUrl = "https://api.github.com/repos/odizinne/opm/releases/latest"
 $downloadFolder = "$env:TEMP\opm_latest"
 $downloadFile = "$downloadFolder\opm.zip"
+$appDataFolder = "$env:APPDATA\opm"
+$versionFile = "$appDataFolder\version.txt"
 
 # Remove the download directory if it exists
 if (Test-Path -Path $downloadFolder) {
@@ -21,6 +23,14 @@ try {
     $downloadUrl = $releaseData.assets | Where-Object { $_.name -like "*.zip" } | Select-Object -ExpandProperty browser_download_url
     if (-not $downloadUrl) {
         Write-Error "No zip file found in the latest release assets."
+        exit 1
+    }
+
+    # Extract version from the download URL
+    if ($downloadUrl -match "download/v(\d+)/") {
+        $version = $matches[1]
+    } else {
+        Write-Error "Version not found in download URL."
         exit 1
     }
     
@@ -43,6 +53,15 @@ try {
     } else {
         Write-Error "Executable not found. Check if the extraction was successful."
     }
+
+    # Create the %APPDATA%\opm directory if it doesn't exist
+    if (-not (Test-Path -Path $appDataFolder)) {
+        New-Item -ItemType Directory -Path $appDataFolder | Out-Null
+    }
+
+    # Write the version to a file
+    Set-Content -Path $versionFile -Value $version
+    Write-Host "Version $version written to $versionFile"
 
 } catch {
     Write-Error "An error occurred: $_"
