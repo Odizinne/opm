@@ -309,7 +309,6 @@ void PackageManager::restartProcess(const QString &executable) {
     qDebug() << "Restarting process:" << executable;
 
     QString processName = QDir::homePath() + "/AppData/Local/Programs/" + executable + "/" + executable + ".exe";
-    qDebug() << processName;
     QProcess::startDetached(processName);
 }
 
