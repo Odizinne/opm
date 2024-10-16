@@ -45,7 +45,7 @@ void PackageManager::help() {
     qDebug() << "+-----------------------------------------------------------------------------------------+";
 }
 
-void PackageManager::selfinstall() {
+void PackageManager::selfInstall() {
     QString sourceDir = QCoreApplication::applicationDirPath();
     QString targetDir = QDir::homePath() + "/AppData/Local/Programs/opm";
 
@@ -172,6 +172,12 @@ void PackageManager::update() {
     checkOPMUpdate();
 }
 
+void PackageManager::selfUpdate() {
+    QString command = R"(Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/Odizinne/opm/refs/heads/main/opm_install.ps1'))";
+    QProcess *process = new QProcess();
+    process->startDetached("powershell.exe", QStringList() << "-Command" << command);
+}
+
 void PackageManager::checkOPMUpdate() {
     qDebug() << "\nChecking for OPM updates...";
     QString versionFilePath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/version";
@@ -219,8 +225,7 @@ void PackageManager::checkOPMUpdate() {
 
         if (remoteVersion > localVersion) {
             qDebug() << "\033[32m" << qPrintable(QString("\nOPM v%1 is available.").arg(remoteVersion)) << "\033[0m";
-            qDebug() << "To install the latest version, run the following command:";
-            qDebug() << "Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/Odizinne/opm/refs/heads/main/opm_install.ps1')";
+            qDebug() << "Run opm selfupdate to install the latest version";
         } else {
             qDebug() << "OPM is up to date.";
         }

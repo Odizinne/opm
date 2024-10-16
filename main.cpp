@@ -18,7 +18,9 @@ int main(int argc, char *argv[]) {
     }
 
     if (command == "selfinstall") {
-        manager.selfinstall();
+        manager.selfInstall();
+    } else if (command == "selfupdate") {
+        manager.selfUpdate();
     } else if (command == "update") {
         manager.update();
     } else if (command == "list") {

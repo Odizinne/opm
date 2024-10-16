@@ -11,7 +11,7 @@ class PackageManager : public QObject
 public:
     PackageManager();
     void help();
-    void selfinstall();
+    void selfInstall();
     void update();
     void list();
     bool copyRecursively(const QString &sourcePath, const QString &destinationPath);
@@ -21,6 +21,7 @@ public:
     void install(const QStringList &packageNames);
     void remove(const QStringList &packageNames);
     void upgrade();
+    void selfUpdate();
 
 private:
     QString previousManifestHash;
