@@ -206,19 +206,21 @@ void PackageManager::list() {
         QJsonObject pkgObj = package.toObject();
         QString projectName = pkgObj["project_name"].toString();
         QString version = pkgObj["version"].toString();
+        QString description = pkgObj["description"].toString();
 
         QString installedVersion = installedVersions.value(projectName, "");
-
         QString coloredProjectName = greenText(projectName.leftJustified(20));
 
         if (installedVersion.isEmpty()) {
-            qDebug().noquote() << QString("%1 %2\n").arg(coloredProjectName).arg(version);
+            qDebug().noquote() << QString("%1 %2").arg(coloredProjectName).arg(version);
         } else {
-            qDebug().noquote() << QString("%1 %2 (Installed: %3)\n")
+            qDebug().noquote() << QString("%1 %2 (Installed: %3)")
             .arg(coloredProjectName)
                 .arg(version)
                 .arg(installedVersion);
         }
+
+        qDebug().noquote() << QString("%1\n").arg(description);
     }
 }
 
