@@ -139,8 +139,16 @@ void PackageManager::update() {
     // Store the hash of the existing manifest
     QString currentManifestFilePath = manifestFile;
     previousManifestHash = computeManifestHash(currentManifestFilePath).toHex();
-
     fetchManifest();
+
+    // Calculate the new hash after fetching the manifest
+    QByteArray newManifestHash = computeManifestHash(currentManifestFilePath).toHex();
+
+    if (previousManifestHash != newManifestHash) {
+        qDebug() << "Manifest updated.";
+    } else {
+        qDebug() << "Manifest is already up to date.";
+    }
 
     bool updatesAvailable = false;
 
@@ -158,15 +166,6 @@ void PackageManager::update() {
         }
     }
 
-    // Calculate the new hash after fetching the manifest
-    QByteArray newManifestHash = computeManifestHash(currentManifestFilePath).toHex();
-
-    if (previousManifestHash != newManifestHash) {
-        qDebug() << "Manifest updated.";
-    } else {
-        qDebug() << "Manifest is already up to date.";
-    }
-
     if (!updatesAvailable) {
         qDebug() << "All installed packages are up to date.";
     }
@@ -174,7 +173,7 @@ void PackageManager::update() {
 }
 
 void PackageManager::checkOPMUpdate() {
-    qDebug() << "Checking for OPM updates...";
+    qDebug() << "\nChecking for OPM updates...";
     QString versionFilePath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/version";
     QFile versionFile(versionFilePath);
 
@@ -223,7 +222,7 @@ void PackageManager::checkOPMUpdate() {
             qDebug() << "To install the latest version, run the following command:";
             qDebug() << "Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/Odizinne/opm/refs/heads/main/opm_install.ps1')";
         } else {
-            qDebug() << "\nOPM is up to date.";
+            qDebug() << "OPM is up to date.";
         }
     } else {
         qDebug() << "Network error:" << reply->errorString();
