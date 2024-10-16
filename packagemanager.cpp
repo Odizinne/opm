@@ -229,6 +229,7 @@ void PackageManager::checkOPMUpdate() {
         } else {
             qDebug() << "OPM is up to date.";
         }
+
     } else {
         qDebug() << "Network error:" << reply->errorString();
     }
