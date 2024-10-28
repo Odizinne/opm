@@ -69,3 +69,5 @@ try {
         Remove-Item -Path $downloadFolder -Recurse -Force
     }
 }
+
+exit
