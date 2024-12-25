@@ -68,6 +68,24 @@ try {
     if (Test-Path -Path $downloadFolder) {
         Remove-Item -Path $downloadFolder -Recurse -Force
     }
+
+    # Define the target directory using LOCALAPPDATA\Programs
+    $targetDir = "$env:LOCALAPPDATA\Programs\opm"
+    
+    # Get the current PATH from the registry
+    $pathRegistryKey = "HKCU:\Environment"
+    $currentPath = (Get-ItemProperty -Path $pathRegistryKey -Name "PATH").PATH
+    
+    # Check if the target directory is already in the PATH
+    if ($currentPath -notlike "*$targetDir*") {
+        # If not, add it to the PATH
+        $newPath = $currentPath + ";" + $targetDir
+        Set-ItemProperty -Path $pathRegistryKey -Name "PATH" -Value $newPath
+        Write-Host "Added $targetDir to PATH."
+    } else {
+        Write-Host "$targetDir is already in PATH."
+    }
+
 }
 
 exit

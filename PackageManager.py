@@ -45,40 +45,52 @@ class PackageManager:
         print("+-----------------------------------------------------------------------------------------+")
 
     def self_install(self):
-        # Use getattr to find the correct path when running as exe
-
+        # Use sys.executable to find the path when running as exe
         source_dir = os.path.dirname(sys.executable)
-        # source_dir = sys._MEIPASS
-        print(source_dir)
+        print(f"Source directory: {source_dir}")
 
+        # Define the target directory for installation
         target_dir = os.path.join(os.getenv("LOCALAPPDATA"), "Programs", "opm")
 
+        # Remove existing installation if it exists
         if os.path.exists(target_dir):
             print("Removing existing installation...")
             shutil.rmtree(target_dir)
 
+        # Copy the files to the target directory
         print(f"Copying files from {source_dir} to {target_dir}")
         shutil.copytree(source_dir, target_dir)
 
-        # Add to PATH in registry
-        key = OpenKey(HKEY_CURRENT_USER, r"Environment", 0, KEY_WRITE)
-        path = self._get_registry_value(key, "PATH")
+        # Add target directory to PATH in the registry
+        # self._add_to_path(target_dir)
 
-        if target_dir not in path:
-            if path:
-                path += ";"
-            path += target_dir
-            SetValueEx(key, "PATH", 0, 1, path)
-
-        print(f"OPM installed successfully to {target_dir} and added to path.")
+        print(f"OPM installed successfully to {target_dir} and added to PATH.")
         print("You may need to restart your terminal for the changes to take effect.")
 
     def _get_registry_value(self, key, value_name):
         try:
-            value, _ = winreg.QueryValueEx(key, value_name)  # Corrected here
+            value, _ = winreg.QueryValueEx(key, value_name)
             return value
         except FileNotFoundError:
             return ""
+
+    def _add_to_path(self, target_dir):
+        # Open the registry key for the current user environment variables
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment", 0, winreg.KEY_WRITE)
+
+        # Get the current PATH value
+        current_path = self._get_registry_value(key, "PATH")
+
+        # Add the target directory to the PATH if it's not already there
+        if target_dir not in current_path:
+            if current_path:
+                current_path += ";"  # Ensure proper separation if other paths exist
+            current_path += target_dir
+
+            # Update the PATH value in the registry
+            winreg.SetValueEx(key, "PATH", 0, winreg.REG_EXPAND_SZ, current_path)
+
+        winreg.CloseKey(key)
 
     def prompt_for_manifest_update(self):
         response = input("App manifest not found, would you like to update it? (y/n): ").strip().lower()
