@@ -526,13 +526,20 @@ void PackageManager::downloadPackage(const QString &url, const QString &packageN
 void PackageManager::extractZip(const QString &zipFilePath, const QString &destDir, const QString &packageName) {
     qDebug() << "Installing to:" << destDir + packageName;
 
-    QString program = "powershell";
+    QDir dir(destDir);
+    if (!dir.exists()) {
+        if (!dir.mkpath(".")) {
+            qDebug() << "Failed to create directory:" << destDir;
+            return;
+        }
+    }
+
+    QString program = "Dependencies/7z.exe";
     QStringList arguments;
 
-    QString command = QString("Expand-Archive -Path '%1' -DestinationPath '%2' -Force").arg(zipFilePath, destDir);
+    arguments << "-aoa" << "x" << zipFilePath << QString("-o%1").arg(destDir);
 
-    arguments << "-Command" << command;
-
+    qDebug() << "Extraction in progress...";
     QProcess process;
     process.start(program, arguments);
     process.waitForFinished();
