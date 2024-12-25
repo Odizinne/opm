@@ -5,6 +5,7 @@ import shutil
 import requests
 from pathlib import Path
 from hashlib import sha256
+import winreg
 from winreg import OpenKey, SetValueEx, HKEY_CURRENT_USER, KEY_WRITE
 from win32com.client import Dispatch
 from subprocess import Popen
@@ -74,7 +75,7 @@ class PackageManager:
 
     def _get_registry_value(self, key, value_name):
         try:
-            value, _ = key.QueryValueEx(value_name)
+            value, _ = winreg.QueryValueEx(key, value_name)  # Corrected here
             return value
         except FileNotFoundError:
             return ""
