@@ -44,7 +44,12 @@ class PackageManager:
         print("+-----------------------------------------------------------------------------------------+")
 
     def self_install(self):
-        source_dir = os.getcwd()
+        # Use getattr to find the correct path when running as exe
+
+        source_dir = os.path.dirname(sys.executable)
+        # source_dir = sys._MEIPASS
+        print(source_dir)
+
         target_dir = os.path.join(os.getenv("LOCALAPPDATA"), "Programs", "opm")
 
         if os.path.exists(target_dir):
