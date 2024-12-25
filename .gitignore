@@ -1,2 +1,2 @@
-build/
-opm.pro.user
+.venv/
+__pycache__
